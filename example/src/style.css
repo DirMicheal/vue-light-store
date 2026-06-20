@@ -1,0 +1,160 @@
+.container {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  padding: 20px 0;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+}
+
+.card h2 {
+  color: #333;
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #667eea;
+  padding-bottom: 8px;
+}
+
+.card h3 {
+  color: #555;
+  margin: 16px 0 8px 0;
+  font-size: 1rem;
+}
+
+pre {
+  background: #f5f5f5;
+  padding: 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  transition: opacity 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+button:active {
+  transform: scale(0.98);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+input[type="text"],
+input[type="number"] {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.state-display {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+}
+
+.state-display span {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  color: #1565c0;
+  border-radius: 4px;
+  margin-right: 8px;
+  margin-bottom: 4px;
+}
+
+.header {
+  text-align: center;
+  color: white;
+  padding: 20px 0;
+}
+
+.header h1 {
+  font-size: 2rem;
+  margin-bottom: 8px;
+}
+
+.header p {
+  opacity: 0.9;
+}
+
+.debug-section {
+  background: #1a1a2e;
+  color: #00ff88;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.debug-section h3 {
+  color: #00ff88;
+  margin-bottom: 12px;
+}
+
+.debug-section pre {
+  background: #16213e;
+  color: #e0e0e0;
+  border: 1px solid #0f3460;
+}
+
+.error {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+  border-left: 4px solid #c62828;
+}
+
+.success {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px;
+  border-radius: 6px;
+  margin: 12px 0;
+  border-left: 4px solid #2e7d32;
+}
+
+.mutation-log {
+  max-height: 150px;
+  overflow-y: auto;
+  font-size: 0.75rem;
+}
+
+.mutation-log div {
+  padding: 4px 0;
+  border-bottom: 1px solid #eee;
+}
