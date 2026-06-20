@@ -8,14 +8,21 @@ export type AnyAction = (...args: any[]) => any
 
 export type AnyActions = Record<string, AnyAction>
 
+export type ValidateActions<T> = {
+  [K in keyof T]: T[K] extends AnyAction ? T[K] : never
+}
+
+export type AllActions<T> = T extends ValidateActions<T> ? true : false
+
 export interface ActionContext<
   S extends State,
-  G extends Getters<S>
+  G extends Getters<S>,
+  A = AnyActions
 > {
   readonly $name: string
   $state: S
   readonly $getters: Readonly<ComputedGetters<G>>
-  readonly $actions: Readonly<AnyActions>
+  readonly $actions: Readonly<A>
   $patch(partial: Partial<S> | ((state: S) => void)): void
   $reset(): void
   $subscribe(
@@ -29,27 +36,31 @@ export interface ActionContext<
   $debug(): StoreDebugInfo<S, G, any>
 }
 
-export type Action<S extends State, G extends Getters<S>> = (
-  this: ActionContext<S, G>,
+export type Action<S extends State, G extends Getters<S>, A = AnyActions> = (
+  this: ActionContext<S, G, A>,
   ...args: any[]
 ) => any
 
-export type Actions<S extends State, G extends Getters<S>> = Record<
+export type Actions<S extends State, G extends Getters<S>, A = AnyActions> = Record<
   string,
-  Action<S, G>
+  Action<S, G, A>
 >
 
-export type AnyRecordActions = object
+export type AnyRecordActions = Record<string, AnyAction>
+
+export type OmitThisParameter<T> = T extends (this: any, ...args: infer A) => infer R
+  ? (...args: A) => R
+  : T
 
 export interface ModuleOptions<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 > {
   name: string
   state: () => S
   getters?: G
-  actions?: A & ThisType<ActionContext<S, G>>
+  actions?: A & ThisType<ActionContext<S, G, A>> & ValidateActions<A>
 }
 
 export type ComputedGetters<G extends Getters<any>> = {
@@ -59,7 +70,7 @@ export type ComputedGetters<G extends Getters<any>> = {
 export interface StoreInstance<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 > {
   readonly $name: string
   readonly $state: S
@@ -82,7 +93,7 @@ export interface StoreInstance<
 export type PublicStore<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 > = {
   readonly [K in keyof S]: S[K]
 } & {
@@ -143,7 +154,7 @@ export interface SubscribeOptions {
 export interface StoreDebugInfo<
   S extends State,
   G extends Getters<S>,
-  _A extends AnyRecordActions
+  _A extends object
 > {
   name: string
   state: S
@@ -167,7 +178,7 @@ export interface GlobalStore {
   register<
     S extends State,
     G extends Getters<S>,
-    A extends AnyRecordActions
+    A extends object
   >(options: ModuleOptions<S, G, A>): () => PublicStore<S, G, A>
   get<T extends PublicStore<any, any, any>>(name: string): T | undefined
   has(name: string): boolean
@@ -186,5 +197,5 @@ export interface GlobalDebugInfo {
 export type UseStore<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 > = () => PublicStore<S, G, A>

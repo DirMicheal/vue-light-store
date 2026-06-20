@@ -30,7 +30,7 @@ describe('ObservableStore', () => {
       const unsubscribe = observable.subscribe(callback)
 
       expect(typeof unsubscribe).toBe('function')
-      expect(observable.subscriberCount).toBe(1)
+      expect(observable.subscriberCount()).toBe(1)
     })
 
     it('should notify subscribers when mutation occurs', () => {
@@ -58,7 +58,7 @@ describe('ObservableStore', () => {
       observable.notifyMutation({ type: 'patch', value: {} }, testState)
 
       expect(callback).toHaveBeenCalledTimes(1)
-      expect(observable.subscriberCount).toBe(0)
+      expect(observable.subscriberCount()).toBe(0)
     })
 
     it('should unsubscribe correctly', () => {
@@ -69,7 +69,7 @@ describe('ObservableStore', () => {
 
       observable.notifyMutation({ type: 'patch', value: {} }, testState)
       expect(callback).not.toHaveBeenCalled()
-      expect(observable.subscriberCount).toBe(0)
+      expect(observable.subscriberCount()).toBe(0)
     })
 
     it('should handle subscriber errors gracefully', () => {
@@ -103,7 +103,7 @@ describe('ObservableStore', () => {
       observable.dispose()
       const unsubscribe = observable.subscribe(vi.fn())
       expect(typeof unsubscribe).toBe('function')
-      expect(observable.subscriberCount).toBe(0)
+      expect(observable.subscriberCount()).toBe(0)
     })
   })
 
@@ -113,7 +113,7 @@ describe('ObservableStore', () => {
       const unsubscribe = observable.onAction(callback)
 
       expect(typeof unsubscribe).toBe('function')
-      expect(observable.actionSubscriberCount).toBe(1)
+      expect(observable.actionSubscriberCount()).toBe(1)
     })
 
     it('should notify action subscribers when action occurs', () => {
@@ -141,7 +141,7 @@ describe('ObservableStore', () => {
       observable.notifyAction({ name: 'increment', args: [] })
 
       expect(callback).toHaveBeenCalledTimes(1)
-      expect(observable.actionSubscriberCount).toBe(0)
+      expect(observable.actionSubscriberCount()).toBe(0)
     })
 
     it('should call after callback and record result', () => {
@@ -239,7 +239,7 @@ describe('ObservableStore', () => {
       observable.dispose()
       const unsubscribe = observable.onAction(vi.fn())
       expect(typeof unsubscribe).toBe('function')
-      expect(observable.actionSubscriberCount).toBe(0)
+      expect(observable.actionSubscriberCount()).toBe(0)
     })
   })
 
@@ -329,9 +329,9 @@ describe('ObservableStore', () => {
 
       observable.dispose()
 
-      expect(observable.isDisposed).toBe(true)
-      expect(observable.subscriberCount).toBe(0)
-      expect(observable.actionSubscriberCount).toBe(0)
+      expect(observable.isDisposed()).toBe(true)
+      expect(observable.subscriberCount()).toBe(0)
+      expect(observable.actionSubscriberCount()).toBe(0)
 
       const debugInfo = observable.getDebugInfo({ count: 0, name: 'test' }, {})
       expect(debugInfo.mutationHistory).toHaveLength(0)
@@ -341,7 +341,25 @@ describe('ObservableStore', () => {
     it('should be idempotent', () => {
       observable.dispose()
       expect(() => observable.dispose()).not.toThrow()
-      expect(observable.isDisposed).toBe(true)
+      expect(observable.isDisposed()).toBe(true)
+    })
+  })
+
+  describe('public methods', () => {
+    it('should expose correct initial state via getters', () => {
+      expect(observable.isDisposed()).toBe(false)
+      expect(observable.subscriberCount()).toBe(0)
+      expect(observable.actionSubscriberCount()).toBe(0)
+    })
+
+    it('should update counts after subscribing', () => {
+      observable.subscribe(vi.fn())
+      observable.subscribe(vi.fn())
+      observable.onAction(vi.fn())
+
+      expect(observable.isDisposed()).toBe(false)
+      expect(observable.subscriberCount()).toBe(2)
+      expect(observable.actionSubscriberCount()).toBe(1)
     })
   })
 

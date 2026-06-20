@@ -7,8 +7,7 @@ import type {
   SubscriptionCallback,
   ActionCallback,
   SubscribeOptions,
-  StoreDebugInfo,
-  AnyRecordActions
+  StoreDebugInfo
 } from './types'
 
 interface Listener<T> {
@@ -20,7 +19,7 @@ interface Listener<T> {
 export class ObservableStore<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 > {
   private subscribers: Set<Listener<SubscriptionCallback<S>>> = new Set()
   private actionSubscribers: Set<Listener<ActionCallback>> = new Set()
@@ -48,7 +47,7 @@ export class ObservableStore<
       this.mutationHistory.shift()
     }
 
-    this.subscribers.forEach((listener) => {
+    for (const listener of this.subscribers) {
       try {
         listener.callback(fullMutation, state)
         if (listener.once) {
@@ -57,7 +56,7 @@ export class ObservableStore<
       } catch (e) {
         console.error(`[vue-light-store] Subscriber error in ${this.storeName}:`, e)
       }
-    })
+    }
   }
 
   notifyAction(action: ActionStartInfo): {
@@ -103,7 +102,7 @@ export class ObservableStore<
       this.actionHistory.shift()
     }
 
-    this.actionSubscribers.forEach((listener) => {
+    for (const listener of this.actionSubscribers) {
       try {
         listener.callback(fullAction)
 
@@ -113,28 +112,28 @@ export class ObservableStore<
       } catch (e) {
         console.error(`[vue-light-store] Action subscriber error in ${this.storeName}:`, e)
       }
-    })
+    }
 
     const resolve = (result: any) => {
       historyEntry.result = result
-      afterCallbacks.forEach((callback) => {
+      for (const callback of afterCallbacks) {
         try {
           callback(result)
         } catch (e) {
           console.error(`[vue-light-store] Action after callback error in ${this.storeName}:`, e)
         }
-      })
+      }
     }
 
     const reject = (error: Error) => {
       historyEntry.error = error
-      errorCallbacks.forEach((callback) => {
+      for (const callback of errorCallbacks) {
         try {
           callback(error)
         } catch (e) {
           console.error(`[vue-light-store] Action error callback error in ${this.storeName}:`, e)
         }
-      })
+      }
     }
 
     return { actionInfo: fullAction, resolve, reject }
@@ -210,15 +209,15 @@ export class ObservableStore<
     this.clearHistory()
   }
 
-  get isDisposed(): boolean {
+  isDisposed(): boolean {
     return this._isDisposed
   }
 
-  get subscriberCount(): number {
+  subscriberCount(): number {
     return this.subscribers.size
   }
 
-  get actionSubscriberCount(): number {
+  actionSubscriberCount(): number {
     return this.actionSubscribers.size
   }
 }

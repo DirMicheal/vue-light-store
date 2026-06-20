@@ -6,8 +6,7 @@ import type {
   StoreRegistry,
   GlobalStore,
   GlobalDebugInfo,
-  UseStore,
-  AnyRecordActions
+  UseStore
 } from './types'
 import { Store } from './store'
 
@@ -19,7 +18,7 @@ class GlobalStoreImpl implements GlobalStore {
   register<
     S extends State,
     G extends Getters<S>,
-    A extends AnyRecordActions
+    A extends object
   >(options: ModuleOptions<S, G, A>): UseStore<S, G, A> {
     if (this.storeFactories.has(options.name)) {
       throw new Error(`[vue-light-store] Store "${options.name}" is already registered`)
@@ -97,7 +96,7 @@ export function createGlobalStore(): GlobalStore {
 export function defineStore<
   S extends State,
   G extends Getters<S>,
-  A extends AnyRecordActions
+  A extends object
 >(options: ModuleOptions<S, G, A>): UseStore<S, G, A> {
   return globalStore.register(options)
 }

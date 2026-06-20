@@ -138,12 +138,49 @@ describe('Store', () => {
       expect(store.$state.nested.value).toBe(11)
     })
 
+    it('should notify mutation when deleting property inside action', () => {
+      interface DelState { a: number; b?: number }
+      interface DelActions { removeB: () => void }
+      const delOptions: ModuleOptions<DelState, {}, DelActions> = {
+        name: 'del-test',
+        state: () => ({ a: 1, b: 2 }),
+        getters: {},
+        actions: {
+          removeB() {
+            delete this.$state.b
+          }
+        }
+      }
+      const store = new Store(delOptions, registry)
+      const sub = vi.fn()
+      store.$subscribe(sub)
+      store.$actions.removeB()
+      expect('b' in store.$state).toBe(false)
+      expect(sub).toHaveBeenCalled()
+      expect(sub.mock.calls[0][0].type).toBe('action')
+      expect(sub.mock.calls[0][0].actionName).toBe('removeB')
+    })
+
     it('should throw error when modifying disposed store', () => {
       const store = new Store(storeOptions, registry)
       store.$dispose()
       expect(() => {
         store.$patch({ count: 10 })
       }).toThrow('[vue-light-store] Store "counter" has been disposed')
+    })
+
+    it('should throw error when directly modifying nested object state outside action', () => {
+      const store = new Store(storeOptions, registry)
+      expect(() => {
+        store.$state.nested.value = 999
+      }).toThrow('[vue-light-store] Cannot directly modify state "nested.value" in store "counter"')
+    })
+
+    it('should throw error when directly deleting nested object property outside action', () => {
+      const store = new Store(storeOptions, registry)
+      expect(() => {
+        delete (store.$state.nested as any).value
+      }).toThrow('[vue-light-store] Cannot directly delete property "nested.value" in store "counter"')
     })
   })
 
@@ -166,6 +203,30 @@ describe('Store', () => {
       expect(() => {
         (store.$getters as any).doubleCount = 100
       }).toThrow()
+    })
+
+    it('should cache computed getter results for performance', () => {
+      const callCount = { value: 0 }
+      const options: ModuleOptions<{ n: number }, { result: (s: { n: number }) => number }, {}> = {
+        name: 'cached-getter-test',
+        state: () => ({ n: 1 }),
+        getters: {
+          result: (state) => {
+            callCount.value++
+            return state.n * 2
+          }
+        }
+      }
+      const store = new Store(options, registry)
+
+      const v1 = store.$getters.result
+      const v2 = store.$getters.result
+      const v3 = store.$getters.result
+
+      expect(v1).toBe(2)
+      expect(v2).toBe(2)
+      expect(v3).toBe(2)
+      expect(callCount.value).toBe(1)
     })
   })
 
@@ -299,6 +360,272 @@ describe('Store', () => {
 
       expect(callback).toHaveBeenCalled()
       expect(callback.mock.calls[0][0].type).toBe('reset')
+    })
+
+    it('should preserve reactivity for nested objects after reset', () => {
+      interface NestedState {
+        nested: { value: number; deep: { x: number } }
+        items: number[]
+      }
+      interface NestedActions {
+        modify: () => void
+        modifyAfterReset: () => void
+      }
+      const nestedOptions: ModuleOptions<NestedState, {}, NestedActions> = {
+        name: 'nested-reset-test',
+        state: () => ({
+          nested: { value: 1, deep: { x: 10 } },
+          items: [1, 2, 3]
+        }),
+        getters: {},
+        actions: {
+          modify() {
+            this.$state.nested.value = 999
+            this.$state.nested.deep.x = 999
+            this.$state.items.push(999)
+          },
+          modifyAfterReset() {
+            this.$state.nested.value = 888
+            this.$state.nested.deep.x = 888
+            this.$state.items.push(888)
+          }
+        }
+      }
+      const store = new Store(nestedOptions, registry)
+
+      store.$actions.modify()
+      expect(store.$state.nested.value).toBe(999)
+      expect(store.$state.items).toEqual([1, 2, 3, 999])
+
+      store.$reset()
+
+      expect(store.$state.nested.value).toBe(1)
+      expect(store.$state.nested.deep.x).toBe(10)
+      expect(store.$state.items).toEqual([1, 2, 3])
+
+      store.$actions.modifyAfterReset()
+      expect(store.$state.nested.value).toBe(888)
+      expect(store.$state.nested.deep.x).toBe(888)
+      expect(store.$state.items).toEqual([1, 2, 3, 888])
+    })
+
+    it('should handle adding and removing properties during reset', () => {
+      interface DynState {
+        a: number
+        b?: number
+      }
+      interface DynActions {
+        addProp: () => void
+        removeProp: () => void
+      }
+      const dynOptions: ModuleOptions<DynState, {}, DynActions> = {
+        name: 'dyn-reset-test',
+        state: () => ({ a: 1 }),
+        getters: {},
+        actions: {
+          addProp() {
+            this.$state.b = 42
+          },
+          removeProp() {
+            delete this.$state.b
+          }
+        }
+      }
+      const store = new Store(dynOptions, registry)
+      store.$actions.addProp()
+      expect(store.$state.b).toBe(42)
+
+      store.$reset()
+      expect(store.$state.a).toBe(1)
+      expect('b' in store.$state).toBe(false)
+    })
+
+    it('should handle type mismatch (array vs non-array) during reset', () => {
+      interface MixedState {
+        data: any
+        list: any
+      }
+      interface MixedActions {
+        swapTypes: () => void
+      }
+      const mixedOptions: ModuleOptions<MixedState, {}, MixedActions> = {
+        name: 'mixed-type-reset',
+        state: () => ({
+          data: { x: 1 },
+          list: [1, 2, 3]
+        }),
+        getters: {},
+        actions: {
+          swapTypes() {
+            this.$state.data = [9, 9, 9]
+            this.$state.list = { y: 2 }
+          }
+        }
+      }
+      const store = new Store(mixedOptions, registry)
+      store.$actions.swapTypes()
+      expect(store.$state.data).toEqual([9, 9, 9])
+      expect(store.$state.list).toEqual({ y: 2 })
+
+      store.$reset()
+      expect(store.$state.data).toEqual({ x: 1 })
+      expect(store.$state.list).toEqual([1, 2, 3])
+    })
+
+    it('should handle deeply nested arrays with objects during reset', () => {
+      interface DeepArrState {
+        rows: { cells: { val: number }[] }[]
+        matrix: number[][]
+      }
+      interface DeepArrActions {
+        mutate: () => void
+      }
+      const deepArrOptions: ModuleOptions<DeepArrState, {}, DeepArrActions> = {
+        name: 'deep-arr-reset',
+        state: () => ({
+          rows: [
+            { cells: [{ val: 1 }, { val: 2 }] },
+            { cells: [{ val: 3 }] }
+          ],
+          matrix: [[1, 2], [3, 4]]
+        }),
+        getters: {},
+        actions: {
+          mutate() {
+            this.$state.rows[0].cells[0].val = 999
+            this.$state.rows.push({ cells: [{ val: 100 }] })
+            this.$state.matrix[0][0] = 999
+            this.$state.matrix.push([5, 6])
+          }
+        }
+      }
+      const store = new Store(deepArrOptions, registry)
+      store.$actions.mutate()
+      expect(store.$state.rows[0].cells[0].val).toBe(999)
+      expect(store.$state.rows).toHaveLength(3)
+      expect(store.$state.matrix[0][0]).toBe(999)
+      expect(store.$state.matrix).toHaveLength(3)
+
+      store.$reset()
+      expect(store.$state.rows[0].cells[0].val).toBe(1)
+      expect(store.$state.rows).toHaveLength(2)
+      expect(store.$state.rows[1].cells[0].val).toBe(3)
+      expect(store.$state.matrix).toEqual([[1, 2], [3, 4]])
+    })
+  })
+
+  describe('array state protection', () => {
+    interface ArrState { items: { id: number; name: string }[] }
+    interface ArrActions {
+      addItem: (item: { id: number; name: string }) => void
+      removeItem: (id: number) => void
+      modifyItem: (id: number, name: string) => void
+    }
+    let arrOptions: ModuleOptions<ArrState, {}, ArrActions>
+    let arrRegistry: StoreRegistry
+
+    beforeEach(() => {
+      arrRegistry = new Map()
+      arrOptions = {
+        name: 'arr-test',
+        state: () => ({
+          items: [
+            { id: 1, name: 'a' },
+            { id: 2, name: 'b' }
+          ]
+        }),
+        getters: {},
+        actions: {
+          addItem(item) {
+            this.$state.items.push(item)
+          },
+          removeItem(id) {
+            const idx = this.$state.items.findIndex(i => i.id === id)
+            if (idx > -1) this.$state.items.splice(idx, 1)
+          },
+          modifyItem(id, name) {
+            const item = this.$state.items.find(i => i.id === id)
+            if (item) item.name = name
+          }
+        }
+      }
+    })
+
+    it('should throw error when directly pushing to array outside action', () => {
+      const store = new Store(arrOptions, arrRegistry)
+      expect(() => {
+        store.$state.items.push({ id: 3, name: 'c' })
+      }).toThrow('[vue-light-store] Cannot directly modify array "items" via "push" in store "arr-test"')
+    })
+
+    it('should throw error when directly splicing array outside action', () => {
+      const store = new Store(arrOptions, arrRegistry)
+      expect(() => {
+        store.$state.items.splice(0, 1)
+      }).toThrow('[vue-light-store] Cannot directly modify array "items" via "splice" in store "arr-test"')
+    })
+
+    it('should throw error when directly setting array index outside action', () => {
+      const store = new Store(arrOptions, arrRegistry)
+      expect(() => {
+        store.$state.items[0] = { id: 99, name: 'x' }
+      }).toThrow('[vue-light-store] Cannot directly modify state "items[0]" in store "arr-test"')
+    })
+
+    it('should throw error when modifying nested object inside array outside action', () => {
+      const store = new Store(arrOptions, arrRegistry)
+      expect(() => {
+        store.$state.items[0].name = 'modified'
+      }).toThrow('[vue-light-store] Cannot directly modify state "items[0].name" in store "arr-test"')
+    })
+
+    it('should allow array modifications inside actions', () => {
+      const store = new Store(arrOptions, arrRegistry)
+      store.$actions.addItem({ id: 3, name: 'c' })
+      expect(store.$state.items).toHaveLength(3)
+      expect(store.$state.items[2]).toEqual({ id: 3, name: 'c' })
+
+      store.$actions.modifyItem(1, 'modified')
+      expect(store.$state.items[0].name).toBe('modified')
+
+      store.$actions.removeItem(2)
+      expect(store.$state.items).toHaveLength(2)
+      expect(store.$state.items.find(i => i.id === 2)).toBeUndefined()
+    })
+
+    it('should protect various array mutation methods', () => {
+      interface ArrMultiState { nums: number[] }
+      interface ArrMultiActions {
+        testAll: () => void
+      }
+      const arrMultiOptions: ModuleOptions<ArrMultiState, {}, ArrMultiActions> = {
+        name: 'arr-multi-test',
+        state: () => ({ nums: [3, 1, 2] }),
+        getters: {},
+        actions: {
+          testAll() {
+            this.$state.nums.push(4)
+            expect(this.$state.nums.pop()).toBe(4)
+            this.$state.nums.unshift(0)
+            expect(this.$state.nums.shift()).toBe(0)
+            this.$state.nums.sort((a, b) => a - b)
+            this.$state.nums.reverse()
+            this.$state.nums.fill(9)
+            this.$state.nums.copyWithin(0, 1)
+          }
+        }
+      }
+      const store = new Store(arrMultiOptions, arrRegistry)
+      store.$actions.testAll()
+      expect(Array.isArray(store.$state.nums)).toBe(true)
+
+      expect(() => { store.$state.nums.pop() }).toThrow()
+      expect(() => { store.$state.nums.shift() }).toThrow()
+      expect(() => { store.$state.nums.unshift(0) }).toThrow()
+      expect(() => { store.$state.nums.sort() }).toThrow()
+      expect(() => { store.$state.nums.reverse() }).toThrow()
+      expect(() => { store.$state.nums.fill(0) }).toThrow()
+      expect(() => { store.$state.nums.copyWithin(0, 1) }).toThrow()
     })
   })
 

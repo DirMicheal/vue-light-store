@@ -1,31 +1,31 @@
-var f = Object.defineProperty;
-var _ = (a, t, e) => t in a ? f(a, t, { enumerable: !0, configurable: !0, writable: !0, value: e }) : a[t] = e;
-var i = (a, t, e) => _(a, typeof t != "symbol" ? t + "" : t, e);
-import { reactive as g, computed as m } from "vue";
-class $ {
+var _ = Object.defineProperty;
+var y = (l, t, s) => t in l ? _(l, t, { enumerable: !0, configurable: !0, writable: !0, value: s }) : l[t] = s;
+var a = (l, t, s) => y(l, typeof t != "symbol" ? t + "" : t, s);
+import { reactive as $, computed as g } from "vue";
+class m {
   constructor(t) {
-    i(this, "subscribers", /* @__PURE__ */ new Set());
-    i(this, "actionSubscribers", /* @__PURE__ */ new Set());
-    i(this, "mutationHistory", []);
-    i(this, "actionHistory", []);
-    i(this, "maxHistorySize", 100);
-    i(this, "_isDisposed", !1);
+    a(this, "subscribers", /* @__PURE__ */ new Set());
+    a(this, "actionSubscribers", /* @__PURE__ */ new Set());
+    a(this, "mutationHistory", []);
+    a(this, "actionHistory", []);
+    a(this, "maxHistorySize", 100);
+    a(this, "_isDisposed", !1);
     this.storeName = t;
   }
-  notifyMutation(t, e) {
+  notifyMutation(t, s) {
     if (this._isDisposed) return;
-    const s = {
+    const e = {
       ...t,
       storeName: this.storeName,
       timestamp: Date.now()
     };
-    this.mutationHistory.push(s), this.mutationHistory.length > this.maxHistorySize && this.mutationHistory.shift(), this.subscribers.forEach((n) => {
+    this.mutationHistory.push(e), this.mutationHistory.length > this.maxHistorySize && this.mutationHistory.shift();
+    for (const n of this.subscribers)
       try {
-        n.callback(s, e), n.once && this.subscribers.delete(n);
-      } catch (r) {
-        console.error(`[vue-light-store] Subscriber error in ${this.storeName}:`, r);
+        n.callback(e, s), n.once && this.subscribers.delete(n);
+      } catch (i) {
+        console.error(`[vue-light-store] Subscriber error in ${this.storeName}:`, i);
       }
-    });
   }
   notifyAction(t) {
     if (this._isDisposed)
@@ -43,75 +43,76 @@ class $ {
         reject: () => {
         }
       };
-    const e = [], s = [], n = {
+    const s = [], e = [], n = {
       ...t,
       storeName: this.storeName,
-      after: (c) => {
-        e.push(c);
+      after: (r) => {
+        s.push(r);
       },
-      onError: (c) => {
-        s.push(c);
+      onError: (r) => {
+        e.push(r);
       }
-    }, r = {
+    }, i = {
       name: t.name,
       args: [...t.args],
       timestamp: Date.now()
     };
-    return this.actionHistory.push(r), this.actionHistory.length > this.maxHistorySize && this.actionHistory.shift(), this.actionSubscribers.forEach((c) => {
+    this.actionHistory.push(i), this.actionHistory.length > this.maxHistorySize && this.actionHistory.shift();
+    for (const r of this.actionSubscribers)
       try {
-        c.callback(n), c.once && this.actionSubscribers.delete(c);
-      } catch (u) {
-        console.error(`[vue-light-store] Action subscriber error in ${this.storeName}:`, u);
+        r.callback(n), r.once && this.actionSubscribers.delete(r);
+      } catch (c) {
+        console.error(`[vue-light-store] Action subscriber error in ${this.storeName}:`, c);
       }
-    }), { actionInfo: n, resolve: (c) => {
-      r.result = c, e.forEach((u) => {
+    return { actionInfo: n, resolve: (r) => {
+      i.result = r;
+      for (const c of s)
         try {
-          u(c);
-        } catch (l) {
-          console.error(`[vue-light-store] Action after callback error in ${this.storeName}:`, l);
+          c(r);
+        } catch (u) {
+          console.error(`[vue-light-store] Action after callback error in ${this.storeName}:`, u);
         }
-      });
-    }, reject: (c) => {
-      r.error = c, s.forEach((u) => {
+    }, reject: (r) => {
+      i.error = r;
+      for (const c of e)
         try {
-          u(c);
-        } catch (l) {
-          console.error(`[vue-light-store] Action error callback error in ${this.storeName}:`, l);
+          c(r);
+        } catch (u) {
+          console.error(`[vue-light-store] Action error callback error in ${this.storeName}:`, u);
         }
-      });
     } };
   }
-  subscribe(t, e = {}) {
+  subscribe(t, s = {}) {
     if (this._isDisposed)
       return () => {
       };
-    const s = {
+    const e = {
       callback: t,
-      once: e.once ?? !1,
-      detached: e.detached ?? !1
+      once: s.once ?? !1,
+      detached: s.detached ?? !1
     };
-    return this.subscribers.add(s), () => {
-      this.subscribers.delete(s);
+    return this.subscribers.add(e), () => {
+      this.subscribers.delete(e);
     };
   }
-  onAction(t, e = {}) {
+  onAction(t, s = {}) {
     if (this._isDisposed)
       return () => {
       };
-    const s = {
+    const e = {
       callback: t,
-      once: e.once ?? !1,
-      detached: e.detached ?? !1
+      once: s.once ?? !1,
+      detached: s.detached ?? !1
     };
-    return this.actionSubscribers.add(s), () => {
-      this.actionSubscribers.delete(s);
+    return this.actionSubscribers.add(e), () => {
+      this.actionSubscribers.delete(e);
     };
   }
-  getDebugInfo(t, e) {
+  getDebugInfo(t, s) {
     return {
       name: this.storeName,
       state: JSON.parse(JSON.stringify(t)),
-      getters: JSON.parse(JSON.stringify(e)),
+      getters: JSON.parse(JSON.stringify(s)),
       actionHistory: [...this.actionHistory],
       mutationHistory: [...this.mutationHistory],
       subscriberCount: this.subscribers.size,
@@ -125,49 +126,47 @@ class $ {
   dispose() {
     this._isDisposed = !0, this.subscribers.clear(), this.actionSubscribers.clear(), this.clearHistory();
   }
-  get isDisposed() {
+  isDisposed() {
     return this._isDisposed;
   }
-  get subscriberCount() {
+  subscriberCount() {
     return this.subscribers.size;
   }
-  get actionSubscriberCount() {
+  actionSubscriberCount() {
     return this.actionSubscribers.size;
   }
 }
-class y {
-  constructor(t, e) {
-    i(this, "$name");
-    i(this, "$state");
-    i(this, "$getters");
-    i(this, "$actions");
-    i(this, "_state");
-    i(this, "_initialState");
-    i(this, "_getters");
-    i(this, "_actions");
-    i(this, "_observable");
-    i(this, "_registry");
-    i(this, "_actionInProgress", !1);
-    i(this, "_currentActionName", null);
-    i(this, "_disposed", !1);
-    i(this, "_stopWatchers", []);
-    i(this, "_publicAPI", null);
-    i(this, "_rawState");
-    this.$name = t.name, this._registry = e, this._observable = new $(t.name), this._initialState = this._deepFreezeClone(t.state()), this._rawState = g(t.state()), this._state = this._setupStateProtection(this._rawState), this.$state = this._state, this._getters = t.getters ?? {}, this.$getters = this._createComputedGetters(), this._actions = t.actions ?? {}, this.$actions = this._createBoundActions(), this._registry.set(this.$name, this);
+class A {
+  constructor(t, s) {
+    a(this, "$name");
+    a(this, "$state");
+    a(this, "$getters");
+    a(this, "$actions");
+    a(this, "_state");
+    a(this, "_initialState");
+    a(this, "_getters");
+    a(this, "_computedGettersCache", /* @__PURE__ */ new Map());
+    a(this, "_actions");
+    a(this, "_observable");
+    a(this, "_registry");
+    a(this, "_actionInProgress", !1);
+    a(this, "_currentActionName", null);
+    a(this, "_disposed", !1);
+    a(this, "_stopWatchers", []);
+    a(this, "_publicAPI", null);
+    a(this, "_rawState");
+    a(this, "_proxyCache", /* @__PURE__ */ new WeakMap());
+    this.$name = t.name, this._registry = s, this._observable = new m(t.name), this._initialState = this._structuredClone(t.state()), this._rawState = $(t.state()), this._state = this._setupStateProtection(this._rawState), this.$state = this._state, this._getters = t.getters ?? {}, this.$getters = this._createComputedGetters(), this._actions = t.actions ?? {}, this.$actions = this._createBoundActions(), this._registry.set(this.$name, this);
   }
-  _deepFreezeClone(t) {
-    const e = JSON.parse(JSON.stringify(t));
-    return this._deepFreeze(e);
-  }
-  _deepFreeze(t) {
-    return t && typeof t == "object" && (Object.freeze(t), Object.values(t).forEach((e) => this._deepFreeze(e))), t;
+  _structuredClone(t) {
+    return typeof structuredClone == "function" ? structuredClone(t) : JSON.parse(JSON.stringify(t));
   }
   _createComputedGetters() {
     const t = {};
-    return Object.keys(this._getters).forEach((s) => {
-      const n = this._getters[s];
-      Object.defineProperty(t, s, {
-        get: () => m(() => n(this._state, this.$getters)).value,
+    return Object.keys(this._getters).forEach((e) => {
+      const n = this._getters[e], i = g(() => n(this._state, this.$getters));
+      this._computedGettersCache.set(e, i), Object.defineProperty(t, e, {
+        get: () => i.value,
         enumerable: !0,
         configurable: !1
       });
@@ -175,28 +174,28 @@ class y {
   }
   _createBoundActions() {
     const t = {};
-    return Object.keys(this._actions).forEach((s) => {
-      t[s] = (...n) => this._executeAction(s, n);
+    return Object.keys(this._actions).forEach((e) => {
+      t[e] = (...n) => this._executeAction(e, n);
     }), t;
   }
-  _executeAction(t, e) {
+  _executeAction(t, s) {
     if (this._disposed)
       throw new Error(`[vue-light-store] Store "${this.$name}" has been disposed`);
-    const { resolve: s, reject: n } = this._observable.notifyAction({
+    const { resolve: e, reject: n } = this._observable.notifyAction({
       name: t,
-      args: e
+      args: s
     });
     this._actionInProgress = !0, this._currentActionName = t;
     try {
-      const r = this._actions[t].apply(
+      const i = this._actions[t].apply(
         this._createActionContext(),
-        e
+        s
       );
-      return r instanceof Promise ? r.then((o) => (s(o), this._actionInProgress = !1, this._currentActionName = null, o)).catch((o) => {
-        throw n(o), this._actionInProgress = !1, this._currentActionName = null, o;
-      }) : (s(r), this._actionInProgress = !1, this._currentActionName = null, r);
-    } catch (r) {
-      throw n(r), this._actionInProgress = !1, this._currentActionName = null, r;
+      return i instanceof Promise ? i.then((h) => (e(h), this._actionInProgress = !1, this._currentActionName = null, h)).catch((h) => {
+        throw n(h), this._actionInProgress = !1, this._currentActionName = null, h;
+      }) : (e(i), this._actionInProgress = !1, this._currentActionName = null, i);
+    } catch (i) {
+      throw n(i), this._actionInProgress = !1, this._currentActionName = null, i;
     }
   }
   _createActionContext() {
@@ -212,42 +211,143 @@ class y {
       $debug: this.$debug.bind(this)
     };
   }
-  _setupStateProtection(t) {
-    const e = this, s = {
-      get(n, r) {
-        return Reflect.get(n, r);
+  _setupStateProtection(t, s = "") {
+    const e = this;
+    if (e._proxyCache.has(t))
+      return e._proxyCache.get(t);
+    const n = {
+      get(h, o) {
+        const r = Reflect.get(h, o);
+        if (r && typeof r == "object" && !Array.isArray(r)) {
+          const c = s ? `${s}.${String(o)}` : String(o);
+          return e._setupStateProtection(r, c);
+        }
+        if (Array.isArray(r)) {
+          const c = s ? `${s}.${String(o)}` : String(o);
+          return e._setupArrayProtection(r, c);
+        }
+        return r;
       },
-      set(n, r, o) {
+      set(h, o, r) {
         if (e._disposed)
           throw new Error(`[vue-light-store] Store "${e.$name}" has been disposed`);
-        if (!e._actionInProgress)
+        if (!e._actionInProgress) {
+          const u = s ? `${s}.${String(o)}` : String(o);
           throw new Error(
-            `[vue-light-store] Cannot directly modify state "${String(r)}" in store "${e.$name}". Use $patch or define an action instead.`
+            `[vue-light-store] Cannot directly modify state "${u}" in store "${e.$name}". Use $patch or define an action instead.`
           );
-        const b = Reflect.set(n, r, o);
-        return e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName) && e._observable.notifyMutation({
-          type: "action",
-          actionName: e._currentActionName,
-          path: String(r),
-          value: o
-        }, e._state), b;
+        }
+        const c = Reflect.set(h, o, r);
+        if (e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName)) {
+          const u = s ? `${s}.${String(o)}` : String(o);
+          e._observable.notifyMutation({
+            type: "action",
+            actionName: e._currentActionName,
+            path: u,
+            value: r
+          }, e._state);
+        }
+        return c;
       },
-      deleteProperty(n, r) {
+      deleteProperty(h, o) {
         if (e._disposed)
           throw new Error(`[vue-light-store] Store "${e.$name}" has been disposed`);
-        if (!e._actionInProgress)
+        if (!e._actionInProgress) {
+          const c = s ? `${s}.${String(o)}` : String(o);
           throw new Error(
-            `[vue-light-store] Cannot directly delete property "${String(r)}" in store "${e.$name}". Use $patch or define an action instead.`
+            `[vue-light-store] Cannot directly delete property "${c}" in store "${e.$name}". Use $patch or define an action instead.`
           );
-        const o = Reflect.deleteProperty(n, r);
-        return e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName) && e._observable.notifyMutation({
-          type: "action",
-          actionName: e._currentActionName,
-          path: String(r)
-        }, e._state), o;
+        }
+        const r = Reflect.deleteProperty(h, o);
+        if (e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName)) {
+          const c = s ? `${s}.${String(o)}` : String(o);
+          e._observable.notifyMutation({
+            type: "action",
+            actionName: e._currentActionName,
+            path: c
+          }, e._state);
+        }
+        return r;
       }
-    };
-    return new Proxy(t, s);
+    }, i = new Proxy(t, n);
+    return e._proxyCache.set(t, i), i;
+  }
+  _setupArrayProtection(t, s) {
+    const e = this;
+    if (e._proxyCache.has(t))
+      return e._proxyCache.get(t);
+    const n = ["push", "pop", "shift", "unshift", "splice", "sort", "reverse", "fill", "copyWithin"], i = {
+      get(o, r) {
+        if (n.includes(String(r)))
+          return (...u) => {
+            if (e._disposed)
+              throw new Error(`[vue-light-store] Store "${e.$name}" has been disposed`);
+            if (!e._actionInProgress)
+              throw new Error(
+                `[vue-light-store] Cannot directly modify array "${s}" via "${String(r)}" in store "${e.$name}". Use $patch or define an action instead.`
+              );
+            const f = o[String(r)](...u);
+            return e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName) && e._observable.notifyMutation({
+              type: "action",
+              actionName: e._currentActionName,
+              path: s,
+              args: u
+            }, e._state), f;
+          };
+        const c = Reflect.get(o, r);
+        if (c && typeof c == "object" && !Array.isArray(c)) {
+          const u = `${s}[${String(r)}]`;
+          return e._setupStateProtection(c, u);
+        }
+        if (Array.isArray(c)) {
+          const u = `${s}[${String(r)}]`;
+          return e._setupArrayProtection(c, u);
+        }
+        return c;
+      },
+      set(o, r, c) {
+        if (e._disposed)
+          throw new Error(`[vue-light-store] Store "${e.$name}" has been disposed`);
+        if (!e._actionInProgress) {
+          const f = `${s}[${String(r)}]`;
+          throw new Error(
+            `[vue-light-store] Cannot directly modify state "${f}" in store "${e.$name}". Use $patch or define an action instead.`
+          );
+        }
+        const u = Reflect.set(o, r, c);
+        if (e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName)) {
+          const f = `${s}[${String(r)}]`;
+          e._observable.notifyMutation({
+            type: "action",
+            actionName: e._currentActionName,
+            path: f,
+            value: c
+          }, e._state);
+        }
+        return u;
+      },
+      deleteProperty(o, r) {
+        if (e._disposed)
+          throw new Error(`[vue-light-store] Store "${e.$name}" has been disposed`);
+        if (!e._actionInProgress) {
+          const u = `${s}[${String(r)}]`;
+          throw new Error(
+            `[vue-light-store] Cannot directly delete property "${u}" in store "${e.$name}". Use $patch or define an action instead.`
+          );
+        }
+        const c = Reflect.deleteProperty(o, r);
+        if (e._currentActionName && !["$patch", "$reset"].includes(e._currentActionName)) {
+          const u = `${s}[${String(r)}]`;
+          e._observable.notifyMutation({
+            type: "action",
+            actionName: e._currentActionName,
+            path: u
+          }, e._state);
+        }
+        return c;
+      }
+    }, h = new Proxy(t, i);
+    return e._proxyCache.set(t, h), h;
   }
   $patch(t) {
     if (this._disposed)
@@ -267,31 +367,45 @@ class y {
       throw new Error(`[vue-light-store] Store "${this.$name}" has been disposed`);
     this._actionInProgress = !0, this._currentActionName = "$reset";
     try {
-      const t = JSON.parse(JSON.stringify(this._initialState));
-      Object.keys(this._state).forEach((e) => {
-        delete this._state[e];
-      }), Object.assign(this._state, t), this._observable.notifyMutation({
+      this._proxyCache = /* @__PURE__ */ new WeakMap();
+      const t = this._structuredClone(this._initialState);
+      this._deepAssign(this._rawState, t), this._observable.notifyMutation({
         type: "reset"
       }, this._state);
     } finally {
       this._actionInProgress = !1, this._currentActionName = null;
     }
   }
-  $subscribe(t, e) {
-    if (this._disposed)
-      return () => {
-      };
-    const s = (r) => {
-      t(r, this._state);
-    }, n = this._observable.subscribe(s, e);
-    return e != null && e.detached || this._stopWatchers.push(n), n;
+  _deepAssign(t, s) {
+    if (Array.isArray(s))
+      t.length = 0, s.forEach((e, n) => {
+        e && typeof e == "object" ? Array.isArray(e) ? (Array.isArray(t[n]) || (t[n] = []), this._deepAssign(t[n], e)) : ((!t[n] || typeof t[n] != "object" || Array.isArray(t[n])) && (t[n] = {}), this._deepAssign(t[n], e)) : t[n] = e;
+      });
+    else {
+      const e = Object.keys(t), n = Object.keys(s);
+      e.forEach((i) => {
+        i in s || delete t[i];
+      }), n.forEach((i) => {
+        const h = s[i], o = t[i];
+        h && typeof h == "object" ? Array.isArray(h) ? (Array.isArray(o) || (t[i] = []), this._deepAssign(t[i], h)) : ((!o || typeof o != "object" || Array.isArray(o)) && (t[i] = {}), this._deepAssign(t[i], h)) : t[i] = h;
+      });
+    }
   }
-  $onAction(t, e) {
+  $subscribe(t, s) {
     if (this._disposed)
       return () => {
       };
-    const s = this._observable.onAction(t, e);
-    return e != null && e.detached || this._stopWatchers.push(s), s;
+    const e = (i) => {
+      t(i, this._state);
+    }, n = this._observable.subscribe(e, s);
+    return s != null && s.detached || this._stopWatchers.push(n), n;
+  }
+  $onAction(t, s) {
+    if (this._disposed)
+      return () => {
+      };
+    const e = this._observable.onAction(t, s);
+    return s != null && s.detached || this._stopWatchers.push(e), e;
   }
   $debug() {
     return this._observable.getDebugInfo(this._state, this.$getters);
@@ -307,21 +421,21 @@ class y {
       value: this.$name,
       writable: !1,
       enumerable: !0
-    }), Object.keys(this._rawState).forEach((e) => {
-      Object.defineProperty(t, e, {
-        get: () => this._state[e],
+    }), Object.keys(this._rawState).forEach((s) => {
+      Object.defineProperty(t, s, {
+        get: () => this._state[s],
         enumerable: !0,
         configurable: !1
       });
-    }), Object.keys(this.$getters).forEach((e) => {
-      Object.defineProperty(t, e, {
-        get: () => this.$getters[e],
+    }), Object.keys(this.$getters).forEach((s) => {
+      Object.defineProperty(t, s, {
+        get: () => this.$getters[s],
         enumerable: !0,
         configurable: !1
       });
-    }), Object.keys(this.$actions).forEach((e) => {
-      Object.defineProperty(t, e, {
-        value: this.$actions[e],
+    }), Object.keys(this.$actions).forEach((s) => {
+      Object.defineProperty(t, s, {
+        value: this.$actions[s],
         writable: !1,
         enumerable: !0,
         configurable: !1
@@ -337,23 +451,23 @@ class y {
 }
 class d {
   constructor() {
-    i(this, "registry", /* @__PURE__ */ new Map());
-    i(this, "storeFactories", /* @__PURE__ */ new Map());
-    i(this, "publicAPICache", /* @__PURE__ */ new Map());
+    a(this, "registry", /* @__PURE__ */ new Map());
+    a(this, "storeFactories", /* @__PURE__ */ new Map());
+    a(this, "publicAPICache", /* @__PURE__ */ new Map());
   }
   register(t) {
     if (this.storeFactories.has(t.name))
       throw new Error(`[vue-light-store] Store "${t.name}" is already registered`);
-    const e = () => {
-      let s = this.registry.get(t.name);
-      return (!s || s.isDisposed) && (s = new y(t, this.registry), this.registry.set(t.name, s), this.publicAPICache.set(t.name, s.toPublicAPI())), this.publicAPICache.get(t.name);
+    const s = () => {
+      let e = this.registry.get(t.name);
+      return (!e || e.isDisposed) && (e = new A(t, this.registry), this.registry.set(t.name, e), this.publicAPICache.set(t.name, e.toPublicAPI())), this.publicAPICache.get(t.name);
     };
-    return this.storeFactories.set(t.name, e), e;
+    return this.storeFactories.set(t.name, s), s;
   }
   get(t) {
-    const e = this.storeFactories.get(t);
-    if (e)
-      return e();
+    const s = this.storeFactories.get(t);
+    if (s)
+      return s();
   }
   has(t) {
     return this.storeFactories.has(t);
@@ -363,15 +477,15 @@ class d {
   }
   $debug() {
     const t = {};
-    let e = 0, s = 0;
-    return this.registry.forEach((n, r) => {
-      const o = n.$debug();
-      t[r] = o, e += o.subscriberCount, s += o.actionSubscriberCount;
+    let s = 0, e = 0;
+    return this.registry.forEach((n, i) => {
+      const h = n.$debug();
+      t[i] = h, s += h.subscriberCount, e += h.actionSubscriberCount;
     }), {
       stores: t,
       totalStores: this.registry.size,
-      totalSubscribers: e,
-      totalActionSubscribers: s
+      totalSubscribers: s,
+      totalActionSubscribers: e
     };
   }
   dispose() {
@@ -380,36 +494,36 @@ class d {
     }), this.registry.clear(), this.storeFactories.clear(), this.publicAPICache.clear();
   }
 }
-const h = new d();
-function A() {
+const b = new d();
+function w() {
   return new d();
 }
-function w(a) {
-  return h.register(a);
+function N(l) {
+  return b.register(l);
 }
-function P(a) {
-  return h.get(a);
+function v(l) {
+  return b.get(l);
 }
-function N(a) {
-  return h.has(a);
+function P(l) {
+  return b.has(l);
 }
-function v() {
-  return h.list();
+function C() {
+  return b.list();
 }
 function I() {
-  return h.$debug();
+  return b.$debug();
 }
 function E() {
-  h.dispose();
+  b.dispose();
 }
 export {
-  $ as ObservableStore,
-  y as Store,
-  A as createGlobalStore,
+  m as ObservableStore,
+  A as Store,
+  w as createGlobalStore,
   I as debugStores,
-  w as defineStore,
+  N as defineStore,
   E as disposeAllStores,
-  P as getStore,
-  N as hasStore,
-  v as listStores
+  v as getStore,
+  P as hasStore,
+  C as listStores
 };

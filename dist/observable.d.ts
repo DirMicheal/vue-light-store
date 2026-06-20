@@ -1,5 +1,5 @@
-import type { State, Getters, ActionStartInfo, MutationInfo, ActionInfo, SubscriptionCallback, ActionCallback, SubscribeOptions, StoreDebugInfo, AnyRecordActions } from './types';
-export declare class ObservableStore<S extends State, G extends Getters<S>, A extends AnyRecordActions> {
+import type { State, Getters, ActionStartInfo, MutationInfo, ActionInfo, SubscriptionCallback, ActionCallback, SubscribeOptions, StoreDebugInfo } from './types';
+export declare class ObservableStore<S extends State, G extends Getters<S>, A extends object> {
     private storeName;
     private subscribers;
     private actionSubscribers;
@@ -19,7 +19,7 @@ export declare class ObservableStore<S extends State, G extends Getters<S>, A ex
     getDebugInfo(state: S, getters: any): StoreDebugInfo<S, G, A>;
     clearHistory(): void;
     dispose(): void;
-    get isDisposed(): boolean;
-    get subscriberCount(): number;
-    get actionSubscriberCount(): number;
+    isDisposed(): boolean;
+    subscriberCount(): number;
+    actionSubscriberCount(): number;
 }

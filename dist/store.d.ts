@@ -1,5 +1,5 @@
-import type { State, Getters, ModuleOptions, ComputedGetters, StoreInstance, PublicStore, MutationInfo, StoreRegistry, AnyRecordActions } from './types';
-export declare class Store<S extends State, G extends Getters<S>, A extends AnyRecordActions> implements StoreInstance<S, G, A> {
+import type { State, Getters, ModuleOptions, ComputedGetters, StoreInstance, PublicStore, MutationInfo, StoreRegistry } from './types';
+export declare class Store<S extends State, G extends Getters<S>, A extends object> implements StoreInstance<S, G, A> {
     readonly $name: string;
     readonly $state: S;
     readonly $getters: Readonly<ComputedGetters<G>>;
@@ -7,6 +7,7 @@ export declare class Store<S extends State, G extends Getters<S>, A extends AnyR
     private _state;
     private _initialState;
     private _getters;
+    private _computedGettersCache;
     private _actions;
     private _observable;
     private _registry;
@@ -16,16 +17,18 @@ export declare class Store<S extends State, G extends Getters<S>, A extends AnyR
     private _stopWatchers;
     private _publicAPI;
     private _rawState;
+    private _proxyCache;
     constructor(options: ModuleOptions<S, G, A>, registry: StoreRegistry);
-    private _deepFreezeClone;
-    private _deepFreeze;
+    private _structuredClone;
     private _createComputedGetters;
     private _createBoundActions;
     private _executeAction;
     private _createActionContext;
     private _setupStateProtection;
+    private _setupArrayProtection;
     $patch(partial: Partial<S> | ((state: S) => void)): void;
     $reset(): void;
+    private _deepAssign;
     $subscribe(callback: (mutation: MutationInfo<S>, state: S) => void, options?: {
         detached?: boolean;
         once?: boolean;
